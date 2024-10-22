@@ -7,6 +7,7 @@
 #include<vector>
 #include<windows.h>
 #pragma comment(lib,"Msimg32.lib")
+#pragma comment(lib,"MSIMG32.lib")
 
 int idx_current_anim = 0;//动画帧索引
 const int PLAYER_ANIM_NUM = 6;//动画帧常数总量
@@ -332,6 +333,9 @@ void DrawPlayerScore(int score)
 int main()
 {
 	initgraph(1280, 720);
+	mciSendString(_T("open mus/bgm.mp3 alias bgm"), NULL, 0, NULL);
+	mciSendString(_T("open mus/hit.wav alias hit"), NULL, 0, NULL);
+	mciSendString(_T("play bgm repeat from 0"), NULL, 0, NULL);
 	bool running = true;
 	int score = 0;
 	ExMessage msg;IMAGE img_background; Player myplayer;
@@ -371,6 +375,7 @@ int main()
 			for (const Bullet& bullet : bullet_list)
 			{
 				if (enemy->CheckBulletCollision(bullet)) {
+					mciSendString(_T("play hit from 0"), NULL, 0, NULL);																				
 					enemy->Hurt();
 					score++;
 				}
