@@ -22,11 +22,14 @@ inline void putimage_alpha(int x, int y, IMAGE* img) {
 
 
 }
-class Animation
+
+class Atlas
 {
 public:
-	Animation(LPCTSTR path, int num, int interval) {
-		interval_ms = interval;
+	std::vector<IMAGE*> frame_list;
+public:
+	Atlas(LPCTSTR path, int num)
+	{
 		TCHAR path_file[256];
 		for (size_t i = 0; i < num; i++)
 		{
@@ -36,36 +39,56 @@ public:
 			frame_list.push_back(frame);
 		}
 	}
-	~Animation() {
+
+	~Atlas()
+	{
 		for (size_t i = 0; i < frame_list.size(); i++)
 		{
 			delete frame_list[i];
 		}
 	}
-	void Play(int x,int y, int delta){
-		timer += delta;
-		if (timer >= interval_ms) {
-			idx_frame = (idx_frame + 1) % frame_list.size();
-			timer = 0;
-		}
-		putimage_alpha(x, y, frame_list[idx_frame]);
-	}
+};
+Atlas* atlas_player_left;
+Atlas* atlas_player_right;
+Atlas* atlas_enemy_left;
+Atlas* atlas_enemy_right;
+
+class Animation
+{
 private:
 	int timer = 0;		//动画计时器
 	int idx_frame = 0;	//动画帧索引
 	int interval_ms = 0;
-	std::vector<IMAGE*> frame_list;
+private:
+	Atlas* anim_atlas;//动画资产指针
+public:
+	Animation(Atlas* atlas,int interval) {
+		anim_atlas = atlas;
+		interval_ms = interval;
+	}
+
+	~Animation() = default;
+
+	void Play(int x,int y, int delta){
+		timer += delta;
+		if (timer >= interval_ms) {
+			idx_frame = (idx_frame + 1) % anim_atlas->frame_list.size();
+			timer = 0;
+		}
+		putimage_alpha(x, y, anim_atlas->frame_list[idx_frame]);
+	}
+
 };
 
 class Player
 {
 private:
 	const int SPEED = 10;
-	const int FRAME_WIDTH = 80;
-	const int FRAME_HEIGHT = 80;
+	const int FRAME_WIDTH = 80;//玩家宽度
+	const int FRAME_HEIGHT = 80;//玩家高度
 	const int SHADOW_WIDTH = 32;
-	const int PLAYER_WIDTH = 80;//玩家宽度
-	const int PLAYER_HEIGHT = 80;//玩家高度
+	const int PLAYER_WIDTH = 80;
+	const int PLAYER_HEIGHT = 80;
 
 	IMAGE img_shadow;
 	Animation* anim_left;
@@ -79,8 +102,8 @@ public:
 	Player() {
 
 		loadimage(&img_shadow, _T("img/shadow_player.png"));
-		anim_left = new Animation(_T("img/player_left_%d.png"), 6, 45);
-		anim_right = new Animation(_T("img/player_right_%d.png"), 6, 45);
+		anim_left = new Animation(atlas_player_left,45);
+		anim_right = new Animation(atlas_player_right,45);
 	}
 	~Player() {
 		delete anim_left;
@@ -207,8 +230,8 @@ public:
 	Enemy() 
 	{
 		loadimage(&img_shadow, _T("img/shadow_enemy.png"));
-		anim_left = new Animation(_T("img/enemy_left_%d.png"), 6, 45);
-		anim_right = new Animation(_T("img/enemy_right_%d.png"), 6, 45);
+		anim_left = new Animation(atlas_enemy_left,45);
+		anim_right = new Animation(atlas_enemy_right,45);
 
 		//敌人生成边界
 		enum class SpawnEdge {
@@ -333,6 +356,11 @@ void DrawPlayerScore(int score)
 int main()
 {
 	initgraph(1280, 720);
+	atlas_player_left = new Atlas(_T("img/player_left_%d.png"), 6);
+	atlas_player_right = new Atlas(_T("img/player_right_%d.png"), 6);
+	atlas_enemy_left = new Atlas(_T("img/enemy_left_%d.png"), 6);
+	atlas_enemy_right = new Atlas(_T("img/enemy_right_%d.png"), 6);
+
 	mciSendString(_T("open mus/bgm.mp3 alias bgm"), NULL, 0, NULL);
 	mciSendString(_T("open mus/hit.wav alias hit"), NULL, 0, NULL);
 	mciSendString(_T("play bgm repeat from 0"), NULL, 0, NULL);
@@ -413,6 +441,10 @@ int main()
 			Sleep(1000 / 144 - delta_time);
 		}
 	}
+	delete atlas_player_left;
+	delete atlas_player_right;
+	delete atlas_enemy_left;
+	delete atlas_enemy_right;
 	EndBatchDraw();
 	return 0;
 }
